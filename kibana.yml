@@ -1,0 +1,9 @@
+# kibana with config ssl commnication with elasticsearch.
+server.port: 5601
+server.host: "192.168.50.18"
+elasticsearch.hosts: ["https://192.168.50.18:9200"]
+elasticsearch.ssl.certificateAuthorities: [ "/etc/kibana/elasticsearch-ca.pem" ]
+elasticsearch.ssl.verificationMode: none
+elasticsearch.username: "admin"
+elasticsearch.password: "Kitespassword@9913"
+xpack.encryptedSavedObjects.encryptionKey: "a6edc906-2f9f-5fb2-a373-efac406f0ef2"
