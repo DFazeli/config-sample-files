@@ -1,5 +1,5 @@
 # file with ssl config transport and ssl commnication with kibana.
-
+# toturial link https://techexpert.tips/elasticsearch/elasticsearch-enable-tls-https/
 cluster.name: kit-es-cluster
 path.data: /es-data/elasticsearch
 path.logs: /var/log/elasticsearch
