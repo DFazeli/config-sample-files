@@ -1,4 +1,5 @@
 # kibana with config ssl commnication with elasticsearch.
+# toturial link https://techexpert.tips/elasticsearch/elasticsearch-enable-tls-https/
 server.port: 5601
 server.host: "192.168.50.18"
 elasticsearch.hosts: ["https://192.168.50.18:9200"]
