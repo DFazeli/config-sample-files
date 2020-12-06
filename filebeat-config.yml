@@ -1,0 +1,26 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/nginx/access.log
+  fields_under_root: true
+  fields:
+    service_name: "nginx"
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 1
+  setup.template.name: "filebeat-nginx"
+  setup.template.pattern: "filebeat-nginx"
+setup.kibana:
+output.logstash:
+  enabled: true
+  hosts: ["x.x.x.x:5044"]
+processors:
+  - add_host_metadata:
+      when.not.contains.tags: forwarded
+  - add_cloud_metadata: ~
+  - add_docker_metadata: ~
+  - add_kubernetes_metadata: ~
