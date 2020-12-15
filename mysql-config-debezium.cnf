@@ -1,0 +1,13 @@
+[mysqld]
+default-authentication-plugin=mysql_native_password
+
+server_id=14
+log_bin
+binlog_format=ROW
+binlog_row_image= full
+
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+
+log-error=/var/log/mysqld.log
+pid-file=/var/run/mysqld/mysqld.pid
