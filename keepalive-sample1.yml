@@ -1,0 +1,70 @@
+global_defs {
+    router_id ha1.cluster.local
+}
+
+vrrp_script HAProxyChecker {
+  script "/usr/bin/killall -0 haproxy"
+  weight 20
+  interval 1
+  fall 2
+  rise 1
+  init_fail
+}
+
+vrrp_instance virtualRouter1 {
+  state BACKUP
+  interface ens192
+  virtual_router_id 1
+  priority 100
+  advert_int 1
+  authentication {
+    auth_type PASS
+	auth_pass password123456
+  }
+ }
+ 
+ virtual_ipaddress {
+   192.168.70.30/24 dev ens192
+ }
+ track_intreface {
+   ens192
+ }
+ track_script {
+    HAProxyChecker
+ }
+ 
+ ************************************
+global_defs {
+    router_id ha2.cluster.local
+}
+
+vrrp_script HAProxyChecker {
+  script "/usr/bin/killall -0 haproxy"
+  weight 20
+  interval 1
+  fall 2
+  rise 1
+  init_fail
+}
+
+vrrp_instance virtualRouter1 {
+  state MASTER
+  interface ens192
+  virtual_router_id 1
+  priority 110
+  advert_int 1
+  authentication {
+    auth_type PASS
+	auth_pass password123456
+  }
+ }
+ 
+ virtual_ipaddress {
+   192.168.70.30/24 dev ens192
+ }
+ track_intreface {
+   ens192
+ }
+ track_script {
+    HAProxyChecker
+ }
