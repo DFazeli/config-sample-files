@@ -1,0 +1,138 @@
+Step 1:
+-----------------------
+vim /etc/my.cnf
+server_id=14
+log_bin
+binlog_format=ROW
+binlog_row_image= full
+
+Step 2:
+----------------------
+systemctl restart mariadb
+
+Step 3:
+----------------------
+/opt/kafka/bin/connect-distributed.sh 
+
+vim /opt/kafka/config/connect-distributed.properties
+
+bootstrap.servers=192.168.174.10:9092
+group.id=connect-cluster
+key.converter=org.apache.kafka.connect.json.JsonConverter
+value.converter=org.apache.kafka.connect.json.JsonConverter
+key.converter.schemas.enable=true
+value.converter.schemas.enable=true
+offset.storage.topic=connect-offsets
+offset.storage.replication.factor=1
+config.storage.topic=connect-configs
+config.storage.replication.factor=1
+status.storage.topic=connect-status
+status.storage.replication.factor=1
+offset.flush.interval.ms=10000
+plugin.path=/opt/connectors
+
+Step 4:
+-----------------------
+/opt/kafka/bin/connect-distributed.sh /opt/kafka/config/connect-distributed.properties
+OR
+/opt/kafka/bin/connect-distributed.sh -daemon /opt/kafka/config/connect-distributed.properties
+
+Step 5:
+------------------------
+curl -H "Application/json" 192.168.174.10:8083/connectors
+curl -H "Application/json" 192.168.174.10:8083/connector-plugins
+curl -H "Application/json" 192.168.174.10:8083/connectors/elasticsearch-connector-consumer/status
+curl -X POST  -H "Application/json" 192.168.174.10:8083/connectors/elasticsearch-connector-debesium/restart 
+curl -X "DELETE"    http://192.168.174.10:8083/connectors/elasticsearch-connector-debesium
+
+Step 6:
+-----------------------
+Download debezium  plugin and move /opt/connectors
+
+Step 7: 
+-------------------------
+Sample config debezium
+
+{
+  "name":"debezium-producer2",
+  "config":{
+    "connector.class":"io.debezium.connector.mysql.MySqlConnector",
+    "database.hostname":"192.168.174.14",
+    "database.port":"3306",
+    "database.user":"streams",
+    "database.password":"123456aA$",
+    "database.server.id":"15",
+    "database.server.name":"debezium-producer2",
+    "database.include.list":"employees",
+    "table.include.list":"employees.employees",
+    "database.history.kafka.bootstrap.servers":"192.168.174.10:9092,192.168.174.11:9092,192.168.174.12:9092",
+    "database.history.kafka.topic":"dbhistory.newtopic2",
+    "include.schema.changes":"true"
+      }
+  }
+
+Apply config debezium:
+curl -i -X POST -H "Accept:application/json" -H "Content-type:application/json" 192.168.174.10:8083/connectors -d '{"name":"debezium-producer2","config":{"connector.class":"io.debezium.connector.mysql.MySqlConnector","database.hostname":"192.168.174.14","database.port":"3306","database.user":"streams","database.password":"123456aA$","database.server.id":"15","database.server.name":"debezium-producer2","database.include.list":"employees","table.include.list":"employees.employees","database.history.kafka.bootstrap.servers":"192.168.174.10:9092,192.168.174.11:9092,192.168.174.12:9092","database.history.kafka.topic":"dbhistory.newtopic2","include.schema.changes":"true"}}'
+
+
+Step 8:
+----------------------------------
+install logstash if nessesery
+
+Step 9:
+---------------------------------
+input {
+   kafka {
+        bootstrap_servers => "192.168.174.10:9092,192.168.174.11:9092,192.168.174.12:9092"
+        group_id => "debezium-producer2"
+        topics => ["debezium-producer2.employees.employees"]
+        auto_offset_reset => "earliest"
+        decorate_events => true
+   }
+}
+filter
+{
+  json {
+        source => "message"
+  }
+  mutate {
+        remove_field => ["@version", "message","[payload][source]", "host", "path", "[payload][before]","[payload][op]", "[payload][transaction]", "[payload][ts_ms]", "schema" ]
+  }
+}
+output {
+     elasticsearch {
+        hosts => ["http://192.168.174.13:9200"]
+        index => "logstash_after_test1"
+        document_id => "%{[payload][after][emp_no]}"
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
