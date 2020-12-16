@@ -1,0 +1,38 @@
+---------- Uat -------------------------------
+{
+  "name":"debezium-uat-user-table",
+  "config":{
+    "connector.class":"io.debezium.connector.mysql.MySqlConnector",
+    "database.hostname":"x.x.x.x",
+    "database.port":"xxxx",
+    "database.user":"debezium-uat-streams",
+    "database.password":"xxxxxxx",
+    "database.server.id":"122",
+    "database.server.name":"debezium-uat-server-name",
+    "database.include.list":"user_service",
+    "table.include.list":"user_service.user",
+    "database.history.kafka.bootstrap.servers":"x.x.x.x:9092,x.x.x.x:9092,x.x.x.x:9092",
+    "database.history.kafka.topic":"debezium-uat-user-table",
+    "include.schema.changes":"true"
+      }
+  }
+  
+  
+  ------------ Sit ------------------------
+  {
+  "name":"debezium-sit-user-table",
+  "config":{
+    "connector.class":"io.debezium.connector.mysql.MySqlConnector",
+    "database.hostname":"x.x.x.x",
+    "database.port":"xxxx",
+    "database.user":"debezium-sit-stream",
+    "database.password":"xxxxx",
+    "database.server.id":"11",
+    "database.server.name":"debezium-sit-server-name",
+    "database.include.list":"user_service",
+    "table.include.list":"user_service.user",
+    "database.history.kafka.bootstrap.servers":"x.x.x.x:9092,x.x.x.x:9092,x.x.x.x:9092",
+    "database.history.kafka.topic":"debezium-sit-user-table",
+    "include.schema.changes":"true"
+      }
+  }
