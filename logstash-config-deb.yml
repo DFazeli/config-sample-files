@@ -1,0 +1,27 @@
+input {
+  kafka {
+        bootstrap_servers => "192.168.20.20:9092,192.168.20.21:9092,192.168.20.22:9092"
+        group_id => "debezium-sit-server-name.user_service.user"
+        topics => ["debezium-sit-server-name.user_service.user"]
+        auto_offset_reset => "earliest"
+        decorate_events => true
+  }
+}
+filter {
+    json { source => "message" }
+    mutate {
+        remove_field => ["@version", "message","[payload][source]", "host", "path", "[payload][before]","[payload][op]", "[payload][transaction]", "[payload][ts_ms]", "schema" ]
+    }
+}
+output {
+     elasticsearch {
+        hosts => ["https://192.168.20.23:9200"]
+        user => "user"
+        password => "password"
+         document_id => "%{[payload][after][id]}"
+        index => "logstash-deb-sit-user"
+        cacert => "/usr/share/logstash/config/elasticsearch-ca.pem"
+        ssl_certificate_verification => false
+
+    }
+}
