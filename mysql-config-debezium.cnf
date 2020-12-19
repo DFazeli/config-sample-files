@@ -1,3 +1,12 @@
+myql -u root -p 
+
+CREATE USER 'username'@'x.x.x.%' IDENTIFIED BY 'password';
+GRANT ALL ON DatabaseName.* TO 'username'@'x.x.x.%';
+GRANT SUPER, RELOAD, PROCESS, REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'username'@'x.x.x.%';
+
+
+# vim /etc/my.cnf OR vim /etc/mysql/mariadb.conf.d/50-server.cnf 
+
 [mysqld]
 default-authentication-plugin=mysql_native_password
 
