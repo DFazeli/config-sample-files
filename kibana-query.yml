@@ -1,0 +1,52 @@
+# Delete All Record from index
+
+POST /logstash-deb-prod-user/_delete_by_query?conflicts=proceed
+{
+  "query": {
+    
+      "match_all": {}
+    
+  }
+}
+----------------------------------------------------------------------
+#Search All Records
+GET _search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+----------------------------------------------------------------------
+# Create template with logstash name and specific settings
+PUT _template/logstash
+{
+    "index_patterns" : ["logstash_service_kafka*"],
+    "settings" : {
+        "index.mapping.total_fields.limit" : "5000",
+        "number_of_shards": 3,
+        "number_of_replicas": 0,
+        "refresh_interval": "60s"
+    }
+}
+-----------------------------------------------------------------------
+# Search with set Alias
+
+GET logstash_zipkin_sit/_search
+{
+  "size": 0,
+  "aggs": {
+    "table": {
+      "composite": {
+        "size": 10,
+        "sources": [
+          {"stk1": {"terms": {"field": "parsemessage.localEndpoint.serviceName.keyword"}}},
+          {"stk2": {"terms": {"field": "parsemessage.remoteEndpoint.serviceName.keyword"}}}
+        ]
+      }
+    }
+  }
+}
+------------------------------------------------------------------------------------
+
+
+
