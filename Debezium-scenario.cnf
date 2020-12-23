@@ -70,7 +70,26 @@ Sample config debezium
     "database.include.list": "user_service, notification_service"
   }
 }
+--------------------------------------
+{
+  "name": "deb-new-release",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "database.user": "user",
+    "database.server.id": "58",
+    "database.history.kafka.bootstrap.servers": "192.168.50.63:9092,192.168.50.64:9092,192.168.50.65:9092",
+    "database.history.kafka.topic": "deb-new-release-usr-notify",
+    "database.server.name": "deb-new-release",
+    "database.port": "3306",
+    "include.schema.changes": "true",
+    "database.hostname": "10.65.50.58",
+    "database.password": "pass",
+    "table.include.list": "user_service.user, notification_service.sms_history",
+    "database.include.list": "user_service, notification_service"
+  }
+}
 
+--------------------------------------
 Apply config debezium:
 curl -i -X POST -H "Accept:application/json" -H "Content-type:application/json" 192.168.174.10:8083/connectors -d '{"name":"debezium-producer2","config":{"connector.class":"io.debezium.connector.mysql.MySqlConnector","database.hostname":"192.168.174.14","database.port":"3306","database.user":"streams","database.password":"123456aA$","database.server.id":"15","database.server.name":"debezium-producer2","database.include.list":"employees","table.include.list":"employees.employees","database.history.kafka.bootstrap.servers":"192.168.174.10:9092,192.168.174.11:9092,192.168.174.12:9092","database.history.kafka.topic":"dbhistory.newtopic2","include.schema.changes":"true"}}'
 
