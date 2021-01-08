@@ -1,0 +1,54 @@
+stages:
+ - build
+ - deploy
+ 
+ 
+Build_SITCONSULT:
+ stage: build
+ after_script: 
+   -  "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"'$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME' need to approve you for deploy '$CI_PROJECT_URL/-/pipelines/$CI_PIPELINE_ID'.\"}' https://hooks.slack.com/services/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"
+
+ script:
+  - cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/
+  - |-
+      if [ ! -d $CI_PROJECT_NAME ]; then
+          git clone -b dev git@git.me.ir:consult/Back-end/consult-configuration-service.git
+        else
+          cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+          git pull origin dev
+      fi    
+  - cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/  
+  - chmod +x gradlew
+  - sudo update-alternatives --set java java-11-openjdk.x86_64
+  - sudo ./gradlew clean build -x test
+ only:
+  - dev
+ tags:
+  - MainRunner
+ 
+Deploy_SITCONSULT:
+ stage: deploy
+ script:
+  - ssh $SITCONSULT "sudo mkdir -p $DeployScriptPath/$CI_PROJECT_NAME"
+  - ssh $SITCONSULT "sudo mkdir -p /opt/$CI_PROJECT_NAME"
+  - ssh $SITCONSULT "sudo mkdir -p /opt/$CI_PROJECT_NAME/logs"
+  - ssh $SITCONSULT "sudo chown runner:runner -R  $DeployScriptPath/$CI_PROJECT_NAME"
+  - sed -i  "s/SERVICE_NAME=ProjectName/SERVICE_NAME=$CI_PROJECT_NAME/g" $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/DeployBash.sh
+  - sed -i  "s/ServiceName/$CI_PROJECT_NAME/g" $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/systemd.service
+  - sed -i  "s/ServiceName/$CI_PROJECT_NAME/g" $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/BinBash
+  - scp $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/build/libs/*.jar $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME
+  - scp $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/DeployBash.sh $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME
+  - scp $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/BinBash $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME
+  - scp $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/systemd.service $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME
+  - ssh $SITCONSULT "sudo mv $DeployScriptPath/$CI_PROJECT_NAME/systemd.service /etc/systemd/system/$CI_PROJECT_NAME.service"
+  - ssh $SITCONSULT "sudo mv $DeployScriptPath/$CI_PROJECT_NAME/BinBash /usr/sbin/$CI_PROJECT_NAME"
+  - ssh $SITCONSULT "sudo mv $DeployScriptPath/$CI_PROJECT_NAME/*.jar /opt/$CI_PROJECT_NAME"
+  - ssh $SITCONSULT "sudo chmod +x $DeployScriptPath/$CI_PROJECT_NAME/DeployBash.sh"
+  - ssh $SITCONSULT "sudo chmod +x /usr/sbin/$CI_PROJECT_NAME"
+  - ssh $SITCONSULT "sudo bash $DeployScriptPath/$CI_PROJECT_NAME/DeployBash.sh"
+  
+ only:
+  - dev
+ when: manual
+ tags:
+  - MainRunner
