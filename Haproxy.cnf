@@ -1,24 +1,25 @@
 frontend kubeApiFrontend
        mode tcp
-		   bind 192.168.232.21:6443
-		   option tcplog
-		   default_backend KubeApiBackend
+       bind 192.168.232.21:6443
+       option tcplog
+       default_backend KubeApiBackend
 		   
 backend kubeApiBaackend
         mode tcp
         balance roundrobin
         server kube1 kube.cluster.local:6443
-		server kube2 kube.cluster.local:6443
+        server kube2 kube.cluster.local:6443
 
 ++++++++++++++++++++++++++++++++++++++++++++
+
 frontend kubeApiFrontend
        mode http
-		   bind 192.168.232.21:6443
-		   option http-server-close
-		   default_backend KubeApiBackend
-		   
-backend kubeApiBaackend
+       bind 172.16.172.16:6443
+       option http-server-close
+       default_backend KubeApiBackend
+
+backend KubeApiBackend
         mode http
         balance roundrobin
-        server kube1 kube.cluster.local:6443
-		server kube2 kube.cluster.local:6443
+        server kube1 172.16.172.11:6443
+        server kube2 172.16.172.12:6443
