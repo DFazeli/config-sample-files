@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  cadvisor:
+    hostname: cadvisor
+    container_name:  cadvisor
+    image: google/cadvisor:latest
+    deploy:
+      mode: global
+    ports:
+      - '8080:8080'
+    privileged: true
+    volumes:
+     - /:/rootfs:ro
+     - /var/run:/var/run:rw
+     - /sys:/sys:ro
+     - /var/lib/docker/:/var/lib/docker:ro
+     - /etc/localtime:/etc/localtime:ro
