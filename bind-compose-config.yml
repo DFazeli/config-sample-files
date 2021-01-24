@@ -1,0 +1,30 @@
+#------- Enable statistics channels Bind9  vim /etc/bind/named.conf ------------
+
+statistics-channels {
+inet 192.168.50.17  port 8053 allow { 172.18.0.0/24; };
+};
+
+
+
+#---- Docker Compose bind-expoeter-compose.yml ---------
+
+---
+version: '3.8'
+services:
+  bind-exporter:
+    hostname: bind-exporter
+    container_name:  bind-exporter
+    image: prometheuscommunity/bind-exporter:v0.3.0
+    deploy:
+      mode: global
+    ports:
+      - '9119:9119'
+    command:
+     - '--bind.stats-url=http://192.168.50.17:8053'
+    volumes:
+     - /etc/localtime:/etc/localtime:ro
+
+# ---- Grafana Dashborad -----------
+https://grafana.com/grafana/dashboards/12309
+
+
