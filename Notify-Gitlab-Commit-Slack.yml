@@ -4,7 +4,7 @@ stages:
 Notify_Commit:
   stage: notify_commit
   script:
-    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` *Project:*$CI_PROJECT_URL - *Branch:* \\`$CI_COMMIT_BRANCH\\` - *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` - *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/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"
+    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` *Project:*$CI_PROJECT_URL - *Branch:* \\`$CI_COMMIT_BRANCH\\` - *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` - *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/*****"
     
   tags:
     - MainRunner
