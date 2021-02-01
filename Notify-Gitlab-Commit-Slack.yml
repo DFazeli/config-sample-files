@@ -1,10 +1,10 @@
 stages:
  - notify_commit
 
-
 Notify_Commit:
   stage: notify_commit
   script:
-    -  "curl -X POST -H 'Content-type: application/json' --data '{\"text\":\"'$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME' need to approve you for deploy '$CI_PROJECT_URL/-/pipelines/$CI_PIPELINE_ID'.\"}' https://hooks.slack.com/services/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"
+    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` *Project:*$CI_PROJECT_URL - *Branch:* \\`$CI_COMMIT_BRANCH\\` - *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` - *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/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"
+    
   tags:
     - MainRunner
