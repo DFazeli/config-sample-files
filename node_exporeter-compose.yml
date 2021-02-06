@@ -1,6 +1,8 @@
 # First we should create user 
-# sudo useradd -s /bin/false -u 65534 node-exporter
-
+# Centeos
+   # sudo useradd -s /bin/false -u 65534 node-exporter
+# ubuntu
+  # sudo useradd -s /bin/false --non-unique -u 65534 node-exporter 
 
 ---
 version: '3.8'
@@ -9,6 +11,7 @@ services:
   node_exporter:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
+    privileged: true
     command:
       - '--path.rootfs=/host'
       - '--collector.systemd'
