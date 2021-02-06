@@ -12,6 +12,8 @@ services:
     image: quay.io/prometheus/node-exporter:latest
     container_name: node_exporter
     privileged: true
+    deploy:
+      mode: global
     command:
       - '--path.rootfs=/host'
       - '--collector.systemd'
