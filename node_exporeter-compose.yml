@@ -1,0 +1,22 @@
+# First we should create user 
+# sudo useradd -s /bin/false -u 65534 node-exporter
+
+
+---
+version: '3.8'
+
+services:
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.systemd'
+    ports:
+      - "9100:9100"
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'
+      - '/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:rw'
+      - '/etc/localtime:/etc/localtime:ro'
