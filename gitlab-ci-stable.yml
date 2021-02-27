@@ -1,0 +1,84 @@
+stages:
+  - build-jar
+  - build-image-docker
+  - push
+  - Preparing_deploy
+  - deploy
+
+before_script:
+  - sudo docker login -u $USERCI -p $ACCESSCI $CI_REGISTRY/$CI_PROJECT_PATH
+
+Build_SIT:
+  stage: build-jar
+  script:
+   - cd $RunnerPath/$CI_COMMIT_REF_SLUG/
+   - |-
+      if [ ! -d $CI_PROJECT_NAME ]; then
+          git clone -b dev git@git.luhfirm.ir:back-end/kit-chat-features.git
+        else
+          cd $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+          git pull origin dev
+      fi    
+   - sudo update-alternatives --set java java-1.8.0-openjdk.x86_64
+   - chmod +x ./mvnw
+   - sudo ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=true
+  only:
+   - dev
+  tags:
+   - MainRunner
+
+Build-Image-Docker:
+  stage: build-image-docker
+  script:
+   - cd $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+   - sudo docker build --build-arg SERVICE_NAME=$CI_PROJECT_NAME -t "$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG":"$CI_PIPELINE_ID" .
+   - echo export CI_PROJECT_TITLE=$$CI_PROJECT_TITLE > .env
+   - echo export CI_PROJECT_NAME=$CI_PROJECT_NAME >> .env
+   - echo export CI_COMMIT_REF_SLUG=$CI_COMMIT_REF_SLUG >> .env
+   - echo export CI_PIPELINE_ID=$CI_PIPELINE_ID >> .env
+   - echo export USERCI=$USERCI >> .env
+   - echo export ACCESSCI=$ACCESSCI >> .env
+   - echo export REGISTRYCI=$REGISTRYCI >> .env
+   - echo export CI_REGISTRY=$CI_REGISTRY >> .env
+   - echo export CI_PROJECT_PATH=$CI_PROJECT_PATH >> .env
+   - echo export IMAGE_TAG=$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID >> .env
+   - sed -i  "s/ServiceName/$CI_PROJECT_NAME/g" $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml
+   - sed -i  "s/CommandRunApp/java -jar *.jar/g" $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml
+   - sed -i  "s/ServicePortContainer/8080/g" $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml
+   - sed -i  "s/ServicePortHost/8094/g" $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml
+   - sed -i  "s/\/home\/runner\/compose\/ServiceName/\/home\/runner\/compose\/$CI_PROJECT_NAME/g" $RunnerPath/$CI_COMMIT_REF_SLUG/deploy-bash.sh  
+  only:
+   - dev
+  tags:
+   - MainRunner
+
+Push_Sit:
+  stage: push
+  script:
+   - sudo docker tag "$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG":"$CI_PIPELINE_ID" "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID"
+   - echo $CI_REGISTRY_IMAGE
+   - echo $CI_COMMIT_REF_SLUG
+   - echo $CI_PIPELINE_ID
+   - sudo docker push "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID"
+  only:
+   - dev
+  tags:
+   - MainRunner
+
+Deploy_SIT:
+  stage: deploy
+  script:
+   - ssh $SIT "sudo mkdir -p $ComposePath/$CI_PROJECT_NAME && sudo chown runner:runner $ComposePath/$CI_PROJECT_NAME" 
+   - scp $RunnerPath/$CI_COMMIT_REF_SLUG/deploy-bash.sh $SIT:$ComposePath/$CI_PROJECT_NAME/
+   - scp $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml $SIT:$ComposePath/$CI_PROJECT_NAME/
+   - scp $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/.env $SIT:$ComposePath/$CI_PROJECT_NAME/
+   - ssh $SIT "sudo chmod +x $ComposePath/$CI_PROJECT_NAME/*.sh"
+   - ssh $SIT "source $ComposePath/$CI_PROJECT_NAME/.env"
+   - ssh $SIT "sudo $ComposePath/$CI_PROJECT_NAME/deploy-bash.sh"
+   - cp $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml.orgin $RunnerPath/$CI_COMMIT_REF_SLUG/docker-compose.yml
+   - cp $RunnerPath/$CI_COMMIT_REF_SLUG/deploy-bash.sh.orgin $RunnerPath/$CI_COMMIT_REF_SLUG/deploy-bash.sh
+  only:
+   - dev
+  tags:
+   - MainRunner
+
