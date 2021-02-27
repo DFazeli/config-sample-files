@@ -83,3 +83,42 @@ Deploy_SIT:
    - dev
   tags:
    - MainRunner
+
+
+# -----------------------------------------------------
+version: '3.8'
+
+services:
+  ServiceName:
+    container_name: ServiceName
+    hostname: ServiceName
+    restart: always
+    image: "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID"
+    command: sh -c "cd /opt/kit-chat-features && CommandRunApp"
+    ports:
+      - "ServicePortHost:ServicePortContainer"
+    deploy:
+     resources:
+       limits:
+         memory: 800M
+    networks:
+            - sit-network
+    volumes:
+       - /etc/localtime:/etc/localtime:ro
+networks:
+     sit-network:
+         name:  sit-network
+
+# --------------------------------------------------------------------
+#!/bin/bash
+
+source /home/runner/compose/ServiceName/.env
+
+docker login -u $USERCI -p $ACCESSCI $CI_REGISTRY/$CI_PROJECT_PATH
+docker-compose  -f /home/runner/compose/ServiceName/docker-compose.yml  up -d
+
+# --------------------------------------------------------------------------
+
+
+
+
