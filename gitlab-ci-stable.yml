@@ -8,6 +8,7 @@ stages:
 before_script:
   - sudo docker login -u $USERCI -p $ACCESSCI $CI_REGISTRY/$CI_PROJECT_PATH
 
+
 Build_SIT:
   stage: build-jar
   script:
@@ -15,13 +16,14 @@ Build_SIT:
    - |-
       if [ ! -d $CI_PROJECT_NAME ]; then
           git clone -b dev git@git.luhfirm.ir:back-end/kit-chat-features.git
+          cd $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
         else
           cd $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
           git pull origin dev
       fi    
    - sudo update-alternatives --set java java-1.8.0-openjdk.x86_64
-   - chmod +x ./mvnw
-   - sudo ./mvnw package -Dquarkus.package.type=uber-jar -DskipTests=true
+   - chmod +x $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/mvnw
+   - sudo $RunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/mvnw package -Dquarkus.package.type=uber-jar -DskipTests=true
   only:
    - dev
   tags:
@@ -81,4 +83,3 @@ Deploy_SIT:
    - dev
   tags:
    - MainRunner
-
