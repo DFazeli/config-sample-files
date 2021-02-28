@@ -1,10 +1,9 @@
 stages:
  - notify_commit
 
-Notify_Commit:
-  stage: notify_commit
+Notify_Commit_slack:
+  stage: Notify_Commit_slack
   script:
-    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` *Project:*$CI_PROJECT_URL - *Branch:* \\`$CI_COMMIT_BRANCH\\` - *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` - *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/*****"
-    
+    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` \n *Project:*$CI_PROJECT_URL \n *Branch:* \\`$CI_COMMIT_BRANCH\\` \n *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` \n *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/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"
   tags:
     - MainRunner
