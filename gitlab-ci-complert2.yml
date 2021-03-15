@@ -1,0 +1,101 @@
+stages:
+  - Notify_Commit_slack
+  - build-jar
+  - build-image-docker
+  - push_to_Docker_registry
+  - Preparing_deploy
+  - deploy
+
+
+before_script:
+  - sudo docker login -u $USERCI -p $ACCESSCI $CI_REGISTRY/$CI_PROJECT_PATH
+
+Notify_Commit_slack:
+  stage: Notify_Commit_slack
+  script:
+    - "curl -s -X POST -H 'Content-type: application/json' --data \"{\\\"text\\\":\\\"*USER:* \\`$GITLAB_USER_NAME\\` \n *Project:*$CI_PROJECT_URL \n *Branch:* \\`$CI_COMMIT_BRANCH\\` \n *Commit Msg:* \\`$CI_COMMIT_MESSAGE\\` \n *Commit_Time:* \\`$CI_COMMIT_TIMESTAMP\\` \\\"}\" https://hooks.slack.com/services/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"
+  tags:
+    - MainRunner
+
+
+Build_SIT:
+  stage: build-jar
+  script:
+    - cd $ConsultRunnerPath/
+    - >
+      if [ ! -d $CI_COMMIT_REF_SLUG ];then
+          mkdir $CI_COMMIT_REF_SLUG
+      fi    
+    - cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/
+    - >
+      if [ ! -d $CI_PROJECT_NAME ];then
+          git clone -b feature-security git@$CI_SERVER_HOST:$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+          cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+       else
+          cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+          git pull origin feature-security
+      fi
+    - sudo update-alternatives --set java java-11-openjdk.x86_64
+    - chmod +x $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/gradlew
+    - sudo $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/gradlew build -x test
+  only:
+    - feature-security
+  tags:
+    - MainRunner
+
+Build-Image-Docker:
+  stage: build-image-docker
+  script:
+    - cd $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/
+    - sudo docker build --build-arg SERVICE_NAME=$CI_PROJECT_NAME -t "$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG":"$CI_PIPELINE_ID" .
+    - echo export CI_PROJECT_TITLE=$$CI_PROJECT_TITLE > env
+    - echo export CI_PROJECT_NAME=$CI_PROJECT_NAME >> env
+    - echo export CI_COMMIT_REF_SLUG=$CI_COMMIT_REF_SLUG >> env
+    - echo export CI_PIPELINE_ID=$CI_PIPELINE_ID >> env
+    - echo export USERCI=$USERCI >> env
+    - echo export ACCESSCI=$ACCESSCI >> env
+    - echo export REGISTRYCI=$REGISTRYCI >> env
+    - echo export CI_REGISTRY=$CI_REGISTRY >> env
+    - echo export CI_PROJECT_PATH=$CI_PROJECT_PATH >> env
+    - echo export IMAGE_TAG=$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID >> env
+    - sed -i  "s/ServiceName/$CI_PROJECT_NAME/g" $RunnerPath/docker-compose.yml
+    - sed -i  "s/CommandRunApp/java -jar *.jar --spring.profiles.active=sit/g" $RunnerPath/docker-compose.yml
+    - sed -i  "s/ServicePortContainer/7001/g" $RunnerPath/docker-compose.yml
+    - sed -i  "s/ServicePortHost/7001/g" $RunnerPath/docker-compose.yml
+    - sed -i  "s/\/home\/runner\/scripts\/ServiceName\/BranchName/\/home\/runner\/scripts\/$CI_PROJECT_NAME\/$CI_COMMIT_REF_SLUG/g" $RunnerPath/deploy-bash.sh
+    
+  only:
+    - feature-security
+  tags:
+    - MainRunner
+
+Push_Sit:
+  stage: push_to_Docker_registry
+  script:
+    - sudo docker tag "$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG":"$CI_PIPELINE_ID" "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID"
+    - echo $CI_REGISTRY_IMAGE
+    - echo $CI_COMMIT_REF_SLUG
+    - echo $CI_PIPELINE_ID
+    - echo $CI_PROJECT_PATH_SLUG
+    - sudo docker push "$CI_REGISTRY/$CI_PROJECT_PATH/$CI_COMMIT_REF_SLUG:$CI_PIPELINE_ID"
+  only:
+    - feature-security
+  tags:
+    - MainRunner
+
+Deploy_SIT:
+  stage: deploy
+  script:
+    - ssh $SITCONSULT "sudo mkdir -p $DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG && sudo chown runner:runner $DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG"
+    - scp $RunnerPath/deploy-bash.sh $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG
+    - scp $RunnerPath/docker-compose.yml $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG
+    - scp $ConsultRunnerPath/$CI_COMMIT_REF_SLUG/$CI_PROJECT_NAME/env $SITCONSULT:$DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG
+    - ssh $SITCONSULT "sudo chmod +x $DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG/*.sh"
+    - ssh $SITCONSULT "source $DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG/env"
+    - ssh $SITCONSULT "sudo $DeployScriptPath/$CI_PROJECT_NAME/$CI_COMMIT_REF_SLUG/deploy-bash.sh"
+    - cp $RunnerPath/docker-compose.yml.orgin $RunnerPath/docker-compose.yml
+    - cp $RunnerPath/deploy-bash.sh.orgin $RunnerPath/deploy-bash.sh
+  only:
+    - feature-security
+  tags:
+    - MainRunner
